@@ -171,7 +171,7 @@ export class DndDraggableDirective implements AfterViewInit, OnDestroy {
 
     this.dndStart.emit( event );
 
-    event.stopPropagation();
+    // event.stopPropagation();
   }
 
   onDrag( event:DragEvent ) {
