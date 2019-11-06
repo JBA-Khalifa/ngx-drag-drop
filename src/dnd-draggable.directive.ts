@@ -29,7 +29,8 @@ export class DndDragImageRefDirective {
 }
 
 @Directive( {
-  selector: "[dndDraggable]"
+  selector: "[dndDraggable]",
+  exportAs: "ngxDraggable"
 } )
 export class DndDraggableDirective implements AfterViewInit, OnDestroy {
 
@@ -88,6 +89,11 @@ export class DndDraggableDirective implements AfterViewInit, OnDestroy {
 
   private readonly dragEventHandler:( event:DragEvent ) => void = ( event:DragEvent ) => this.onDrag( event );
 
+  private dragStartListener;
+  private dragEndListener;
+
+  private componentThatLocked: any;
+
   @Input()
   set dndDisableIf( value:boolean ) {
 
@@ -114,6 +120,7 @@ export class DndDraggableDirective implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit():void {
+    this.addHostListeners();
     this.ngZone.runOutsideAngular( () => {
       this.elementRef.nativeElement.addEventListener( "drag", this.dragEventHandler );
     } );
@@ -126,7 +133,18 @@ export class DndDraggableDirective implements AfterViewInit, OnDestroy {
     }
   }
 
-  @HostListener( "dragstart", [ "$event" ] )
+  
+  toggleDragLock(value: boolean, component: any, force: boolean = false):void {
+    if (value) {
+      this.componentThatLocked = component;
+      this.removeHostListeners();
+    } else if(component === this.componentThatLocked) {
+      this.componentThatLocked = null;
+      this.addHostListeners();
+    }
+  }
+
+  //@HostListener( "dragstart", [ "$event" ] )
   onDragStart( event:DndEvent ) {
 
     if( this.draggable === false ) {
@@ -179,7 +197,7 @@ export class DndDraggableDirective implements AfterViewInit, OnDestroy {
     this.dndDrag.emit( event );
   }
 
-  @HostListener( "dragend", [ "$event" ] )
+  //@HostListener( "dragend", [ "$event" ] )
   onDragEnd( event:DragEvent ) {
 
     // get drop effect from custom stored state as its not reliable across browsers
@@ -244,6 +262,27 @@ export class DndDraggableDirective implements AfterViewInit, OnDestroy {
     else {
 
       return this.elementRef.nativeElement;
+    }
+  }
+
+  private addHostListeners():void {
+    this.draggable = true;
+    if (!this.dragStartListener) {
+      this.dragStartListener = this.renderer.listen(this.elementRef.nativeElement, 'dragstart', this.onDragStart.bind(this));
+    }
+    if (!this.dragEndListener) {
+      this.dragEndListener = this.renderer.listen(this.elementRef.nativeElement, 'dragend', this.onDragEnd.bind(this));
+    }
+  }
+
+
+  private removeHostListeners():void {
+    this.draggable = false;
+    if(this.dragStartListener) {
+      this.dragStartListener();
+    }
+    if(this.dragEndListener){
+      this.dragEndListener();
     }
   }
 }
