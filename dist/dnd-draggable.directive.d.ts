@@ -29,15 +29,21 @@ export declare class DndDraggableDirective implements AfterViewInit, OnDestroy {
     private dragImage;
     private isDragStarted;
     private readonly dragEventHandler;
+    private dragStartListener;
+    private dragEndListener;
+    private componentThatLocked;
     dndDisableIf: boolean;
     dndDisableDragIf: boolean;
     constructor(elementRef: ElementRef, renderer: Renderer2, ngZone: NgZone);
     ngAfterViewInit(): void;
     ngOnDestroy(): void;
+    toggleDragLock(value: boolean, component: any, force?: boolean): void;
     onDragStart(event: DndEvent): boolean;
     onDrag(event: DragEvent): void;
     onDragEnd(event: DragEvent): void;
     registerDragHandle(handle: DndHandleDirective | undefined): void;
     registerDragImage(elementRef: ElementRef | undefined): void;
     private determineDragImage;
+    private addHostListeners;
+    private removeHostListeners;
 }

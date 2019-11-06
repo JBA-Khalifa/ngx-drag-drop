@@ -1,4 +1,4 @@
-import { Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, NgZone, Output, Renderer2, ContentChild, NgModule } from '@angular/core';
+import { Directive, ElementRef, EventEmitter, HostBinding, Input, NgZone, Output, Renderer2, ContentChild, HostListener, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /**
@@ -363,6 +363,7 @@ var DndDraggableDirective = /** @class */ (function () {
      */
     function () {
         var _this = this;
+        this.addHostListeners();
         this.ngZone.runOutsideAngular((/**
          * @return {?}
          */
@@ -383,10 +384,37 @@ var DndDraggableDirective = /** @class */ (function () {
         }
     };
     /**
+     * @param {?} value
+     * @param {?} component
+     * @param {?=} force
+     * @return {?}
+     */
+    DndDraggableDirective.prototype.toggleDragLock = /**
+     * @param {?} value
+     * @param {?} component
+     * @param {?=} force
+     * @return {?}
+     */
+    function (value, component, force) {
+        if (force === void 0) { force = false; }
+        if (value) {
+            this.componentThatLocked = component;
+            this.removeHostListeners();
+        }
+        else if (component === this.componentThatLocked) {
+            this.componentThatLocked = null;
+            this.addHostListeners();
+        }
+    };
+    //@HostListener( "dragstart", [ "$event" ] )
+    //@HostListener( "dragstart", [ "$event" ] )
+    /**
      * @param {?} event
      * @return {?}
      */
-    DndDraggableDirective.prototype.onDragStart = /**
+    DndDraggableDirective.prototype.onDragStart = 
+    //@HostListener( "dragstart", [ "$event" ] )
+    /**
      * @param {?} event
      * @return {?}
      */
@@ -437,11 +465,15 @@ var DndDraggableDirective = /** @class */ (function () {
     function (event) {
         this.dndDrag.emit(event);
     };
+    //@HostListener( "dragend", [ "$event" ] )
+    //@HostListener( "dragend", [ "$event" ] )
     /**
      * @param {?} event
      * @return {?}
      */
-    DndDraggableDirective.prototype.onDragEnd = /**
+    DndDraggableDirective.prototype.onDragEnd = 
+    //@HostListener( "dragend", [ "$event" ] )
+    /**
      * @param {?} event
      * @return {?}
      */
@@ -520,9 +552,44 @@ var DndDraggableDirective = /** @class */ (function () {
             return this.elementRef.nativeElement;
         }
     };
+    /**
+     * @private
+     * @return {?}
+     */
+    DndDraggableDirective.prototype.addHostListeners = /**
+     * @private
+     * @return {?}
+     */
+    function () {
+        this.draggable = true;
+        if (!this.dragStartListener) {
+            this.dragStartListener = this.renderer.listen(this.elementRef.nativeElement, 'dragstart', this.onDragStart.bind(this));
+        }
+        if (!this.dragEndListener) {
+            this.dragEndListener = this.renderer.listen(this.elementRef.nativeElement, 'dragend', this.onDragEnd.bind(this));
+        }
+    };
+    /**
+     * @private
+     * @return {?}
+     */
+    DndDraggableDirective.prototype.removeHostListeners = /**
+     * @private
+     * @return {?}
+     */
+    function () {
+        this.draggable = false;
+        if (this.dragStartListener) {
+            this.dragStartListener();
+        }
+        if (this.dragEndListener) {
+            this.dragEndListener();
+        }
+    };
     DndDraggableDirective.decorators = [
         { type: Directive, args: [{
-                    selector: "[dndDraggable]"
+                    selector: "[dndDraggable]",
+                    exportAs: "ngxDraggable"
                 },] }
     ];
     /** @nocollapse */
@@ -548,9 +615,7 @@ var DndDraggableDirective = /** @class */ (function () {
         dndCanceled: [{ type: Output }],
         draggable: [{ type: HostBinding, args: ["attr.draggable",] }],
         dndDisableIf: [{ type: Input }],
-        dndDisableDragIf: [{ type: Input }],
-        onDragStart: [{ type: HostListener, args: ["dragstart", ["$event"],] }],
-        onDragEnd: [{ type: HostListener, args: ["dragend", ["$event"],] }]
+        dndDisableDragIf: [{ type: Input }]
     };
     return DndDraggableDirective;
 }());
@@ -971,6 +1036,7 @@ var DndDropzoneDirective = /** @class */ (function () {
  */
 var DndHandleDirective = /** @class */ (function () {
     function DndHandleDirective(parent) {
+        this.parent = parent;
         this.draggable = true;
         parent.registerDragHandle(this);
     }
@@ -983,6 +1049,7 @@ var DndHandleDirective = /** @class */ (function () {
      * @return {?}
      */
     function (event) {
+        this.parent.toggleDragLock(false, null, true);
         event._dndUsingHandle = true;
     };
     DndHandleDirective.decorators = [

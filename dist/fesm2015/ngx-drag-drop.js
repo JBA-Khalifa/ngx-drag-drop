@@ -1,4 +1,4 @@
-import { Directive, ElementRef, EventEmitter, HostBinding, HostListener, Input, NgZone, Output, Renderer2, ContentChild, NgModule } from '@angular/core';
+import { Directive, ElementRef, EventEmitter, HostBinding, Input, NgZone, Output, Renderer2, ContentChild, HostListener, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /**
@@ -358,6 +358,7 @@ class DndDraggableDirective {
      * @return {?}
      */
     ngAfterViewInit() {
+        this.addHostListeners();
         this.ngZone.runOutsideAngular((/**
          * @return {?}
          */
@@ -374,6 +375,23 @@ class DndDraggableDirective {
             endDrag();
         }
     }
+    /**
+     * @param {?} value
+     * @param {?} component
+     * @param {?=} force
+     * @return {?}
+     */
+    toggleDragLock(value, component, force = false) {
+        if (value) {
+            this.componentThatLocked = component;
+            this.removeHostListeners();
+        }
+        else if (component === this.componentThatLocked) {
+            this.componentThatLocked = null;
+            this.addHostListeners();
+        }
+    }
+    //@HostListener( "dragstart", [ "$event" ] )
     /**
      * @param {?} event
      * @return {?}
@@ -420,6 +438,7 @@ class DndDraggableDirective {
     onDrag(event) {
         this.dndDrag.emit(event);
     }
+    //@HostListener( "dragend", [ "$event" ] )
     /**
      * @param {?} event
      * @return {?}
@@ -486,10 +505,37 @@ class DndDraggableDirective {
             return this.elementRef.nativeElement;
         }
     }
+    /**
+     * @private
+     * @return {?}
+     */
+    addHostListeners() {
+        this.draggable = true;
+        if (!this.dragStartListener) {
+            this.dragStartListener = this.renderer.listen(this.elementRef.nativeElement, 'dragstart', this.onDragStart.bind(this));
+        }
+        if (!this.dragEndListener) {
+            this.dragEndListener = this.renderer.listen(this.elementRef.nativeElement, 'dragend', this.onDragEnd.bind(this));
+        }
+    }
+    /**
+     * @private
+     * @return {?}
+     */
+    removeHostListeners() {
+        this.draggable = false;
+        if (this.dragStartListener) {
+            this.dragStartListener();
+        }
+        if (this.dragEndListener) {
+            this.dragEndListener();
+        }
+    }
 }
 DndDraggableDirective.decorators = [
     { type: Directive, args: [{
-                selector: "[dndDraggable]"
+                selector: "[dndDraggable]",
+                exportAs: "ngxDraggable"
             },] }
 ];
 /** @nocollapse */
@@ -515,9 +561,7 @@ DndDraggableDirective.propDecorators = {
     dndCanceled: [{ type: Output }],
     draggable: [{ type: HostBinding, args: ["attr.draggable",] }],
     dndDisableIf: [{ type: Input }],
-    dndDisableDragIf: [{ type: Input }],
-    onDragStart: [{ type: HostListener, args: ["dragstart", ["$event"],] }],
-    onDragEnd: [{ type: HostListener, args: ["dragend", ["$event"],] }]
+    dndDisableDragIf: [{ type: Input }]
 };
 
 /**
@@ -887,6 +931,7 @@ class DndHandleDirective {
      * @param {?} parent
      */
     constructor(parent) {
+        this.parent = parent;
         this.draggable = true;
         parent.registerDragHandle(this);
     }
@@ -895,6 +940,7 @@ class DndHandleDirective {
      * @return {?}
      */
     onDragEvent(event) {
+        this.parent.toggleDragLock(false, null, true);
         event._dndUsingHandle = true;
     }
 }
